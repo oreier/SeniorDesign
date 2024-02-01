@@ -78,16 +78,23 @@ void idleState() {
     currentState = MOVEMENT;  // Transition to movement state
     initializeMovementState();
   }
+
+  // Add slight movement
+  int angle = map(currentTime % 2000, 0, 2000, 0, 180); // Adjust values 
+  myServo.write(angle);
+  delay(15); // Adjust delay based on your servo speed 
 }
 
 void movementState() {
   engageElectromagnet();
   closeHand();
   colorSensor();
+  liftArmShoulder();
   liftArmElbow();
   turnOnLED();
   setColorOff();
-  returnArmsToSide();
+  returnArmShoulder();
+  returnArmElbow();
   releaseServoAndElectromagnet();
   
   currentState = IDLE;  // Transition back to idle state
@@ -108,6 +115,11 @@ void closeHand() {
 
 colorSensor(){
   // code to set 2 colors
+}
+
+void liftArmShoulder() {
+  liftArmShoulderLeft();
+  liftArmShoulderRight();
 }
 
 void liftArmShoulderLeft() {
