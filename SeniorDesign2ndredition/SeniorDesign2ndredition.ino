@@ -24,9 +24,9 @@
 #define ELBOW_RIGHT_SERVO_PIN 9        // Pin number for the elbow right servo motor
 
 #define LEFT_LINEAR_ACTUATOR_PIN 10   // Pin number for the left shoulder linear actuator
-#define LEFT_LINEAR_ACTUATOR_PIN 11   // Pin number for the left shoulder linear actuator
+#define LEFT_LINEAR_ACTUATOR_PIN2 11   // Pin number for the left shoulder linear actuator
 #define RIGHT_LINEAR_ACTUATOR_PIN 12  // Pin number for the right shoulder linear actuator
-#define RIGHT_LINEAR_ACTUATOR_PIN 13  // Pin number for the right shoulder linear actuator
+#define RIGHT_LINEAR_ACTUATOR_PIN2 13  // Pin number for the right shoulder linear actuator
 
 #define ELCTRO_MAG_RIGHT_PIN 14    // pin number for right elctro magnet 
 #define ELCTRO_MAG_LEFT_PIN 15    // pin number for left elctro magnet 
@@ -51,6 +51,10 @@ const int RED_THRESHOLD = 50000;
 const int BLUE_THRESHOLD = 30000;
 const int YELLOW_THRESHOLD = 45000;
 
+// time keepers
+unsigned long previousMoveTime = 0;
+unsigned long previousSoundTime = 0;
+
 
 enum RobotState {
   IDLE,
@@ -59,10 +63,9 @@ enum RobotState {
 
 
 // VARIABLES
-DY::Player player;
+DY::Player player(&Serial1);
 
-RobotState currentState = IDLE;
-unsigned long previousSoundTime = 0;
+RobotState currentState = MOVEMENT;
 
 Servo handLeftServo;
 Servo handRightServo;
@@ -138,14 +141,7 @@ void loop() {
 
 void idleState() {
   unsigned long currentTime = millis();
-  Serial.println("in idle state"); 
   /*
-  
-  // Play sound every SOUND_INTERVAL milliseconds
-  if (currentTime - previousSoundTime >= SOUND_INTERVAL) {
-    previousSoundTime = currentTime;
-    playSound();
-  }
   
   // Check if the trigger pin is triggered
   if (digitalRead(TRIGGER_PIN) == LOW) {
@@ -153,11 +149,23 @@ void idleState() {
     initializeMovementState();
   }
   */
+  
+  // Move servo every MOVEMENT_INTERVAL milliseconds
+  if (currentTime - previousMoveTime >= 15000) {
+    previousMoveTime = currentTime;
+    Serial.println("in idle state move!"); 
+    playSound();
+    slightMovement(); // Call function to move the servo
+  }
 
+}
+
+void slightMovement(){
   // Add slight movement
   handRightServo.write(45); //CHECK?????
-  delay(1000); // Adjust delay based on your servo speed 
- 
+  delay(3000); // Adjust delay based on your servo speed 
+  handRightServo.write(90);
+  delay(3000); // Adjust delay based on your servo speed 
 }
 
 void movementState() {
@@ -175,7 +183,7 @@ void movementState() {
   openHand();
   releaseElectromagnet();
   
-  currentState = IDLE;  // Transition back to idle state
+  currentState = MOVEMENT;  // Transition back to idle state
 }
 
 void initializeMovementState() {
@@ -184,12 +192,14 @@ void initializeMovementState() {
 
 void engageElectromagnet() {
   // Code to engage the electromagnet
+  Serial.println("electro engaged");
+  delay(1000);
 }
 
 void closeHand() {
   handLeftServo.write(180);  // closed hand is 180     
   handRightServo.write(180);  // closed hand is 180
-  delay(1000);                    
+  delay(2000);                    
 }
 
 void colorSensing(){
@@ -221,16 +231,22 @@ void setBeakerColors(uint16_t r, uint16_t g, uint16_t b) {
   // Red detected
   if (r > RED_THRESHOLD && g < YELLOW_THRESHOLD && b < YELLOW_THRESHOLD) {
     red = HIGH;
+    Serial.println("is red");
+    delay(1000);
   }
 
   // Blue detected
   else if (r < BLUE_THRESHOLD && g < BLUE_THRESHOLD && b > BLUE_THRESHOLD) {
     blue = HIGH;
+    Serial.println("is blue");
+    delay(1000);
   }
 
   // Yellow detected
   else if (r > YELLOW_THRESHOLD && g > YELLOW_THRESHOLD && b < BLUE_THRESHOLD) {
     yellow = HIGH;
+    Serial.println("is yellow");
+    delay(1000);
   }
 }
 
@@ -349,6 +365,5 @@ void releaseElectromagnet() {
 void playSound() {
   // Code to play the sound
   //playSpecifiedDevicePath(..)
-  
   player.playSpecified(1);
 }
