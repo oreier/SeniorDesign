@@ -8,21 +8,6 @@
 // DEFINITIONS
 #define SOUND_INTERVAL 10000   // Interval between sound plays in milliseconds
 
-#define ELBOW_LEFT_SERVO_PIN 8        // Pin number for the elbow left servo motor
-#define ELBOW_RIGHT_SERVO_PIN 9        // Pin number for the elbow right servo motor
-
-#define HAND_LEFT_SERVO_PIN 10    // Pin number for the hand left servo
-#define HAND_RIGHT_SERVO_PIN 11    // Pin number for the hand right servo
-int minServo = 500;
-int maxServo = 2500;
-
-#define LEFT_LINEAR_ACTUATOR_PIN 6   // Pin number for the left shoulder linear actuator
-#define RIGHT_LINEAR_ACTUATOR_PIN 7  // Pin number for the right shoulder linear actuator
-
-#define LED_PIN_RED 12      // pin number for red pin led
-#define  LED_PIN_GREEN 13 //pin number for green pin led
-#define LED_PIN_BLUE 14 //pin number for blue pin led
-
 #define AUDIO_TX_PIN 0
 #define AUDIO_RX_PIN 1
 
@@ -31,6 +16,22 @@ int maxServo = 2500;
 
 #define COLOR_LEFT_SDA_PIN 4
 #define COLOR_LEFT_SCL_PIN 5
+
+#define LEFT_LINEAR_ACTUATOR_PIN 6   // Pin number for the left shoulder linear actuator
+#define RIGHT_LINEAR_ACTUATOR_PIN 7  // Pin number for the right shoulder linear actuator
+
+#define ELBOW_LEFT_SERVO_PIN 8        // Pin number for the elbow left servo motor
+#define ELBOW_RIGHT_SERVO_PIN 9        // Pin number for the elbow right servo motor
+
+#define LED_PIN_RED 10      // pin number for red pin led
+#define  LED_PIN_GREEN 11 //pin number for green pin led
+#define LED_PIN_BLUE 12 //pin number for blue pin led
+
+#define HAND_LEFT_SERVO_PIN 13    // Pin number for the hand left servo
+#define HAND_RIGHT_SERVO_PIN 14    // Pin number for the hand right servo
+int minServo = 500;
+int maxServo = 2500;
+
 
 int red = LOW;
 int blue = LOW;
