@@ -17,18 +17,24 @@
 #define COLOR_LEFT_SDA_PIN 4
 #define COLOR_LEFT_SCL_PIN 5
 
-#define LEFT_LINEAR_ACTUATOR_PIN 6   // Pin number for the left shoulder linear actuator
-#define RIGHT_LINEAR_ACTUATOR_PIN 7  // Pin number for the right shoulder linear actuator
+#define HAND_RIGHT_SERVO_PIN 6   // Pin number for the hand right servo
+#define HAND_LEFT_SERVO_PIN 7    // Pin number for the hand left servo
 
 #define ELBOW_LEFT_SERVO_PIN 8        // Pin number for the elbow left servo motor
 #define ELBOW_RIGHT_SERVO_PIN 9        // Pin number for the elbow right servo motor
 
-#define LED_PIN_RED 10      // pin number for red pin led
-#define  LED_PIN_GREEN 11 //pin number for green pin led
-#define LED_PIN_BLUE 12 //pin number for blue pin led
+#define LEFT_LINEAR_ACTUATOR_PIN 10   // Pin number for the left shoulder linear actuator
+#define LEFT_LINEAR_ACTUATOR_PIN 11   // Pin number for the left shoulder linear actuator
+#define RIGHT_LINEAR_ACTUATOR_PIN 12  // Pin number for the right shoulder linear actuator
+#define RIGHT_LINEAR_ACTUATOR_PIN 13  // Pin number for the right shoulder linear actuator
 
-#define HAND_LEFT_SERVO_PIN 13    // Pin number for the hand left servo
-#define HAND_RIGHT_SERVO_PIN 14    // Pin number for the hand right servo
+#define ELCTRO_MAG_RIGHT_PIN 14    // pin number for right elctro magnet 
+#define ELCTRO_MAG_LEFT_PIN 15    // pin number for left elctro magnet 
+
+#define LED_PIN_BLUE 26 //pin number for blue pin led
+#define  LED_PIN_GREEN 27 //pin number for green pin led
+#define LED_PIN_RED 28      // pin number for red pin led
+
 int minServo = 500;
 int maxServo = 2500;
 
