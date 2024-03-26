@@ -3,6 +3,7 @@
 #include <Wire.h>
 #include "Adafruit_TCS34725.h"
 #include "DYPlayerArduino.h"
+#include "ColorConverterLib.h"
 
 
 // DEFINITIONS
@@ -20,34 +21,34 @@
 #define HAND_RIGHT_SERVO_PIN 6   // Pin number for the hand right servo
 #define HAND_LEFT_SERVO_PIN 7    // Pin number for the hand left servo
 
-#define ELBOW_LEFT_SERVO_PIN 8        // Pin number for the elbow left servo motor
-#define ELBOW_RIGHT_SERVO_PIN 9        // Pin number for the elbow right servo motor
+#define ELBOW_RIGHT_SERVO_PIN 8        // Pin number for the elbow right servo motor
+#define ELBOW_LEFT_SERVO_PIN 9        // Pin number for the elbow left servo motor
 
-#define LEFT_LINEAR_ACTUATOR_PIN 10   // Pin number for the left shoulder linear actuator
-#define LEFT_LINEAR_ACTUATOR_PIN2 11   // Pin number for the left shoulder linear actuator
-#define RIGHT_LINEAR_ACTUATOR_PIN 12  // Pin number for the right shoulder linear actuator
-#define RIGHT_LINEAR_ACTUATOR_PIN2 13  // Pin number for the right shoulder linear actuator
+#define RIGHT_LINEAR_ACTUATOR_PIN_UP 10  // Pin number for the right shoulder linear actuator
+#define RIGHT_LINEAR_ACTUATOR_PIN_DOWN 11  // Pin number for the right shoulder linear actuator
+#define LEFT_LINEAR_ACTUATOR_PIN_UP 12   // Pin number for the left shoulder linear actuator
+#define LEFT_LINEAR_ACTUATOR_PIN_DOWN 13   // Pin number for the left shoulder linear actuator
 
 #define ELCTRO_MAG_RIGHT_PIN 14    // pin number for right elctro magnet 
 #define ELCTRO_MAG_LEFT_PIN 15    // pin number for left elctro magnet 
 
-#define LED_PIN_BLUE 26 //pin number for blue pin led
-#define  LED_PIN_GREEN 27 //pin number for green pin led
-#define LED_PIN_RED 28      // pin number for red pin led
+#define LED_PIN_BLUE 16 //pin number for blue pin led
+#define  LED_PIN_GREEN 17 //pin number for green pin led
+#define LED_PIN_RED 18     // pin number for red pin led
 
 int minServo = 500;
 int maxServo = 2500;
 
 
-int red = LOW;
-int blue = LOW;
-int yellow = LOW;
+int red = 0;
+int blue = 0;
+int yellow = 0;
 
 const int purple[] = {128,0,128};
 const int green[] = {0,255,0};
 const int orange[] = {255,50,0};
 
-const int RED_THRESHOLD = 50000;
+const int RED_THRESHOLD = 1000;
 const int BLUE_THRESHOLD = 30000;
 const int YELLOW_THRESHOLD = 45000;
 
@@ -77,9 +78,10 @@ Adafruit_TCS34725 colorSensor1 = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_614M
 Adafruit_TCS34725 colorSensor2 = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_614MS, TCS34725_GAIN_1X);
 
 void setup() {
-
-  pinMode(LEFT_LINEAR_ACTUATOR_PIN, OUTPUT);
-  pinMode(RIGHT_LINEAR_ACTUATOR_PIN, OUTPUT);
+  pinMode(RIGHT_LINEAR_ACTUATOR_PIN_UP, OUTPUT);
+  pinMode(LEFT_LINEAR_ACTUATOR_PIN_UP, OUTPUT);
+  pinMode(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, OUTPUT);
+  pinMode(LEFT_LINEAR_ACTUATOR_PIN_DOWN, OUTPUT);
 
   pinMode(LED_PIN_RED, OUTPUT);
   pinMode(LED_PIN_GREEN, OUTPUT);
@@ -117,18 +119,6 @@ void setup() {
   //audio player
   player.begin();
 }
-
-// void loop() {
-//   switch (currentState) {
-//     case IDLE:
-//       idleState();
-//       break;
-      
-//     case MOVEMENT:
-//       movementState();
-//       break;
-//   }
-// }
 
 void loop() {
   if (currentState == IDLE) {
@@ -168,6 +158,10 @@ void slightMovement(){
   delay(3000); // Adjust delay based on your servo speed 
 }
 
+
+// MOVEMENT STATE****************************************************************************************************
+
+
 void movementState() {
 
   Serial.println("entering the movement state");
@@ -197,9 +191,10 @@ void engageElectromagnet() {
 }
 
 void closeHand() {
+  Serial.println("close hand!!!!!");
   handLeftServo.write(180);  // closed hand is 180     
   handRightServo.write(180);  // closed hand is 180
-  delay(2000);                    
+  delay(3000);                    
 }
 
 void colorSensing(){
@@ -220,70 +215,98 @@ void colorSensing(){
   colorTemp1 = colorSensor2.calculateColorTemperature_dn40(r1, g1, b1, c1);
   lux1 = colorSensor2.calculateLux(r1, g1, b1);
 
-  setBeakerColors(r, g, b);
-  setBeakerColors(r1, g1, b1);
+  setBeakerColors(r, g, b, c);
+  setBeakerColors(r1, g1, b1, c1);
 
 }
 
-void setBeakerColors(uint16_t r, uint16_t g, uint16_t b) {
+void setBeakerColors(uint16_t r, uint16_t g, uint16_t b, uint16_t c) {
   Serial.println("setting color!");
-  
+  Serial.println(r);
+  Serial.println(g);
+  Serial.println(b);
+
   // Red detected
-  if (r > RED_THRESHOLD && g < YELLOW_THRESHOLD && b < YELLOW_THRESHOLD) {
-    red = HIGH;
+  if (r > g && r > b) {
+    red = 1;
     Serial.println("is red");
     delay(1000);
   }
 
   // Blue detected
-  else if (r < BLUE_THRESHOLD && g < BLUE_THRESHOLD && b > BLUE_THRESHOLD) {
-    blue = HIGH;
+  else if (b > r && b > g) {
+    blue = 1;
     Serial.println("is blue");
     delay(1000);
   }
 
   // Yellow detected
-  else if (r > YELLOW_THRESHOLD && g > YELLOW_THRESHOLD && b < BLUE_THRESHOLD) {
-    yellow = HIGH;
+  else if (r > b && g > b) {
+    yellow = 1;
     Serial.println("is yellow");
     delay(1000);
   }
 }
 
-// ************************* This way of doing the arm shoulders has got to change 
-// because both shoulders should move at once 
+void printColorName(double hue)
+{
+  if (hue < 15)
+  {
+    Serial.println("Red");
+  }
+  else if (hue < 45)
+  {
+    Serial.println("Orange");
+  }
+  else if (hue < 90)
+  {
+    Serial.println("Yellow");
+  }
+  else if (hue < 150)
+  {
+    Serial.println("Green");
+  }
+  else if (hue < 210)
+  {
+    Serial.println("Cyan");
+  }
+  else if (hue < 270)
+  {
+    Serial.println("Blue");
+  }
+  else if (hue < 330)
+  {
+    Serial.println("Magenta");
+  }
+  else
+  {
+    Serial.println("Red");
+  }
+}
 
 void liftArmShoulder() {
-  //liftArmShoulderLeft();
-  //liftArmShoulderRight();
-}
-/*
-void liftArmShoulderLeft() {
-  // Code to move the left shoulder linear actuator to lift the arm elbow to a 90-degree angle
-  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN, HIGH);
-  delay(2000); // adjust the delay time as needed to reach position
-  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN, LOW);
-}
+  // digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_UP, HIGH);
+  // digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_UP, HIGH);
+  // delay(2000); // adjust the delay time as needed to reach position
+  // digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_UP, LOW);
+  // digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_UP, LOW);
 
-void liftArmShoulderRight() {
-  // Code to move the right shoulder linear actuator to lift the arm elbow to a 90-degree angle
-  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN, HIGH);
-  delay(2000); // adjust the delay time as needed to reach position
-  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN, LOW);
 }
-*/
 
 void extendArmElbow() {
 
 // *********************** WHAT IS THIS ANGLE??? ELBOW
 
+  //Serial.println("extending elbow!!!!!");
   leftElbowServo.write(180);  // left elbow
   rightElbowServo.write(180); // right elbow
+  Serial.println("done extending elbow!!!!!");
   delay(1000); 
 }
 
 
 void turnOnLED() {
+  Serial.println("LED!!!!!");
   if (red == HIGH && yellow == HIGH) {
     setColor(orange);
   }
@@ -297,70 +320,55 @@ void turnOnLED() {
     setColorOff();
   }
 
-  delay(100);
+  delay(30000);
 }
 
 void setColor(const int color[]) {
-  /*
+  
   analogWrite(LED_PIN_RED, color[0]); // set red pin
   analogWrite(LED_PIN_GREEN, color[1]); // set green pin color
   analogWrite(LED_PIN_BLUE, color[2]); // set blue pin color
-  */
+  
 }
 
 void setColorOff() {
-  /*
-  digitalWrite(LED_PIN_RED, LOW); // set red pin off 
-  digitalWrite(LED_PIN_GREEN, LOW); // set green pin off 
-  digitalWrite(LED_PIN_BLUE, LOW); // set blue pin off 
-  */
+  
+  analogWrite(LED_PIN_RED, 255); // set red pin off 
+  analogWrite(LED_PIN_GREEN, 255); // set green pin off 
+  analogWrite(LED_PIN_BLUE, 255); // set blue pin off 
+  
 }
 
 void returnArmElbow() {
 
 // *********************** WHAT IS THIS ANGLE??? ELBOW
-
-  leftElbowServo.write(180);  // left elbow
-  rightElbowServo.write(180); // right elbow
-  delay(1000); 
+  Serial.println("return elbow!!!!!");
+  leftElbowServo.write(0);  // left elbow
+  rightElbowServo.write(0); // right elbow
+  delay(3000); 
 
 }
-
-// ************************* This way of doing the arm shoulders has got to change 
-// because both shoulders should move at once 
 
 void returnArmShoulder() {
-  //returnArmShoulderLeft();
-  //returnArmShoulderRight();
-}
-
-void returnArmShoulderLeft() {
-  // Code to move the left shoulder linear actuator to return the arm elbow to a 0 degree
-  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN, HIGH);
-  delay(2000); // adjust the delay time as needed to reach position
-  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN, LOW);
-}
-
-void returnArmShoulderRight() {
-  // Code to move the right shoulder linear actuator to return the arm elbow to a 0 degree
-  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN, HIGH);
-  delay(2000); // adjust the delay time as needed to reach position
-  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN, LOW);
+  // digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, HIGH);
+  // digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, HIGH);
+  // delay(2000); // adjust the delay time as needed to reach position
+  // digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
+  // digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
 }
 
 
 void openHand() {
+  Serial.println("open hand!!!!!");
   handLeftServo.write(0);  // open hand is     
   handRightServo.write(0);  // open hand is ?????WHAT ANGLE
-  delay(1000);  
+  delay(3000);  
 
 }
 
 void releaseElectromagnet() {
   // Code to release the electromagnet
 }
-
-
 
 void playSound() {
   // Code to play the sound
