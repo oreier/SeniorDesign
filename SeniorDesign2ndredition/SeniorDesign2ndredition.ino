@@ -1,9 +1,8 @@
 //LIRBARIES!!!
 #include <Servo.h>
 #include <Wire.h>
-#include "Adafruit_TCS34725.h"
+#include "Adafruit_APDS9960.h"
 #include "DYPlayerArduino.h"
-#include "ColorConverterLib.h"
 
 
 // DEFINITIONS
@@ -74,8 +73,10 @@ Servo handRightServo;
 Servo leftElbowServo;
 Servo rightElbowServo;
  
-Adafruit_TCS34725 colorSensor1 = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_614MS, TCS34725_GAIN_1X);
-Adafruit_TCS34725 colorSensor2 = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_614MS, TCS34725_GAIN_1X);
+Adafruit_APDS9960 colorSensor1;
+Adafruit_APDS9960 colorSensor2;
+
+bool colorDetected = false;
 
 void setup() {
   pinMode(RIGHT_LINEAR_ACTUATOR_PIN_UP, OUTPUT);
@@ -94,28 +95,31 @@ void setup() {
   rightElbowServo.attach(ELBOW_RIGHT_SERVO_PIN, minServo, maxServo);
 
   //set pins. Optional for Wire, not for Wire1
-  Wire1.setSDA(2);
-  Wire1.setSCL(3);
-  Wire.setSDA(4);
-  Wire.setSCL(5);
+  Wire.setSDA(2);
+  Wire.setSCL(3);
+  Wire1.setSDA(4);
+  Wire1.setSCL(5);
 
   //initialize sensor 1 and check initialization simultaneously
-  if (colorSensor1.begin(TCS34725_ADDRESS, &Wire)) {
+  if (colorSensor1.begin()) {
     Serial.println("Found sensor");
   } else {
-    Serial.println("No TCS34725 found ... check your connections");
+    Serial.println("No colorSensor1 found ... check your connections");
     while (1);
   }
 
+  colorSensor1.enableColor(true);
+  //0x39, APDS9960_GGAIN_1, &Wire1
   //initialize sensor 2 and check initialization simultaneously
-  if (colorSensor2.begin(TCS34725_ADDRESS, &Wire1)) {
+  if (colorSensor2.begin()) {
     Serial.println("Found sensor");
   } else {
-    Serial.println("No TCS34725 found ... check your connections");
+    Serial.println("No colorSensor2 found ... check your connections");
     while (1);
   }
+
+  colorSensor2.enableColor(true);
   
-  // Additional setup code for other motors or sensors
   //audio player
   player.begin();
 }
@@ -192,8 +196,8 @@ void engageElectromagnet() {
 
 void closeHand() {
   Serial.println("close hand!!!!!");
-  handLeftServo.write(180);  // closed hand is 180     
-  handRightServo.write(180);  // closed hand is 180
+  handLeftServo.write(90);  // closed hand is 180     
+  handRightServo.write(90);  // closed hand is 180
   delay(3000);                    
 }
 
@@ -205,15 +209,20 @@ void colorSensing(){
   
   uint16_t r1, g1, b1, c1, colorTemp1, lux1;
 
-  colorSensor1.getRawData(&r, &g, &b, &c);
-  // colorTemp = colorSensor1.calculateColorTemperature(r, g, b);
-  colorTemp = colorSensor1.calculateColorTemperature_dn40(r, g, b, c);
-  lux = colorSensor1.calculateLux(r, g, b);
+  //wait for color data to be ready
+  while(!colorSensor1.colorDataReady() || !colorSensor2.colorDataReady()){
+    delay(5);
+  }
 
-  colorSensor2.getRawData(&r1, &g1, &b1, &c1);
+  colorSensor1.getColorData(&r, &g, &b, &c);
+  // colorTemp = colorSensor1.calculateColorTemperature(r, g, b);
+  //colorTemp = colorSensor1.calculateColorTemperature_dn40(r, g, b, c);
+  //lux = colorSensor1.calculateLux(r, g, b);
+
+  colorSensor2.getColorData(&r1, &g1, &b1, &c1);
   // colorTemp = colorSensor2.calculateColorTemperature(r, g, b);
-  colorTemp1 = colorSensor2.calculateColorTemperature_dn40(r1, g1, b1, c1);
-  lux1 = colorSensor2.calculateLux(r1, g1, b1);
+  //colorTemp1 = colorSensor2.calculateColorTemperature_dn40(r1, g1, b1, c1);
+  //lux1 = colorSensor2.calculateLux(r1, g1, b1);
 
   setBeakerColors(r, g, b, c);
   setBeakerColors(r1, g1, b1, c1);
@@ -225,11 +234,13 @@ void setBeakerColors(uint16_t r, uint16_t g, uint16_t b, uint16_t c) {
   Serial.println(r);
   Serial.println(g);
   Serial.println(b);
+  Serial.println(c);
 
   // Red detected
   if (r > g && r > b) {
     red = 1;
     Serial.println("is red");
+    colorDetected = true; 
     delay(1000);
   }
 
@@ -237,6 +248,7 @@ void setBeakerColors(uint16_t r, uint16_t g, uint16_t b, uint16_t c) {
   else if (b > r && b > g) {
     blue = 1;
     Serial.println("is blue");
+    colorDetected = true;
     delay(1000);
   }
 
@@ -248,54 +260,22 @@ void setBeakerColors(uint16_t r, uint16_t g, uint16_t b, uint16_t c) {
   }
 }
 
-void printColorName(double hue)
-{
-  if (hue < 15)
-  {
-    Serial.println("Red");
-  }
-  else if (hue < 45)
-  {
-    Serial.println("Orange");
-  }
-  else if (hue < 90)
-  {
-    Serial.println("Yellow");
-  }
-  else if (hue < 150)
-  {
-    Serial.println("Green");
-  }
-  else if (hue < 210)
-  {
-    Serial.println("Cyan");
-  }
-  else if (hue < 270)
-  {
-    Serial.println("Blue");
-  }
-  else if (hue < 330)
-  {
-    Serial.println("Magenta");
-  }
-  else
-  {
-    Serial.println("Red");
-  }
-}
 
 void liftArmShoulder() {
-  // digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_UP, HIGH);
-  // digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_UP, HIGH);
-  // delay(2000); // adjust the delay time as needed to reach position
-  // digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_UP, LOW);
-  // digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_UP, LOW);
+  Serial.println("Arm shoulder opens");
+  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_UP, HIGH);
+  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_UP, HIGH);
+  delay(5000); // adjust the delay time as needed to reach position
+  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_UP, LOW);
+  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_UP, LOW);
 
 }
 
 void extendArmElbow() {
 
-// *********************** WHAT IS THIS ANGLE??? ELBOW
+// *********************** angle 90 - 180
+
+  //for(pos = 0; pos<=90; pos+=1);
 
   //Serial.println("extending elbow!!!!!");
   leftElbowServo.write(180);  // left elbow
@@ -320,7 +300,7 @@ void turnOnLED() {
     setColorOff();
   }
 
-  delay(30000);
+  delay(3000);
 }
 
 void setColor(const int color[]) {
@@ -343,18 +323,19 @@ void returnArmElbow() {
 
 // *********************** WHAT IS THIS ANGLE??? ELBOW
   Serial.println("return elbow!!!!!");
-  leftElbowServo.write(0);  // left elbow
-  rightElbowServo.write(0); // right elbow
+  leftElbowServo.write(90);  // left elbow
+  rightElbowServo.write(90); // right elbow
   delay(3000); 
 
 }
 
 void returnArmShoulder() {
-  // digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, HIGH);
-  // digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, HIGH);
-  // delay(2000); // adjust the delay time as needed to reach position
-  // digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
-  // digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
+  Serial.println("Arm shoulder returns");
+  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, HIGH);
+  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, HIGH);
+  delay(5000); // adjust the delay time as needed to reach position
+  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
+  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
 }
 
 
