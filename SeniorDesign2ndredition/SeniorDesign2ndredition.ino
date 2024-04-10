@@ -116,10 +116,10 @@ void setup() {
   digitalWrite(ELECTRO_MAG_LEFT_PIN, LOW);
 
   //set pins. Optional for Wire, not for Wire1
-  Wire.setSDA(2);
-  Wire.setSCL(3);
-  Wire1.setSDA(4);
-  Wire1.setSCL(5);
+  Wire1.setSDA(2);
+  Wire1.setSCL(3);
+  Wire.setSDA(4);
+  Wire.setSCL(5);
 
   //initialize sensor 1 and check initialization simultaneously
   if(!colorSensor1.begin(10, APDS9960_AGAIN_4X, APDS9960_ADDRESS, &Wire)){
