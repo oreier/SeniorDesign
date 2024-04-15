@@ -18,11 +18,11 @@
 #define COLOR_LEFT_SDA_PIN 4
 #define COLOR_LEFT_SCL_PIN 5
 
-#define HAND_RIGHT_SERVO_PIN 6   // Pin number for the hand right servo
-#define HAND_LEFT_SERVO_PIN 7    // Pin number for the hand left servo
+#define HAND_RIGHT_SERVO_PIN 7   // Pin number for the hand right servo
+#define HAND_LEFT_SERVO_PIN 6    // Pin number for the hand left servo
 
-#define ELBOW_RIGHT_SERVO_PIN 8        // Pin number for the elbow right servo motor
-#define ELBOW_LEFT_SERVO_PIN 9        // Pin number for the elbow left servo motor
+#define ELBOW_RIGHT_SERVO_PIN 9        // Pin number for the elbow right servo motor
+#define ELBOW_LEFT_SERVO_PIN 8        // Pin number for the elbow left servo motor
 
 #define RIGHT_LINEAR_ACTUATOR_PIN_UP 10  // Pin number for the right shoulder linear actuator
 #define RIGHT_LINEAR_ACTUATOR_PIN_DOWN 11  // Pin number for the right shoulder linear actuator
@@ -75,7 +75,7 @@ enum RobotState {
 // VARIABLES
 DY::Player player(&Serial1);
 
-RobotState currentState = MOVEMENT;
+RobotState currentState = IDLE;
 
 Servo handLeftServo;
 Servo handRightServo;
@@ -103,6 +103,12 @@ void setup() {
   
   handLeftServo.attach(HAND_LEFT_SERVO_PIN, minServo, maxServo);
   handRightServo.attach(HAND_RIGHT_SERVO_PIN, minServo, maxServo);
+
+  handRightServo.write(0);
+  handLeftServo.write(90);
+
+  rightElbowServo.write(0);
+  leftElbowServo.write(0);
 
   leftElbowServo.attach(ELBOW_LEFT_SERVO_PIN, minServo, maxServo);
   rightElbowServo.attach(ELBOW_RIGHT_SERVO_PIN, minServo, maxServo);
@@ -139,6 +145,7 @@ void setup() {
   colorSensor1.enableColor(true);
   colorSensor2.enableColor(true);
   colorSensor1.enableProximity(true);
+  colorSensor2.enableProximity(true);
   
   //audio player
   player.begin();
@@ -147,6 +154,7 @@ void setup() {
   strip.begin();           
   strip.show();            // Turn OFF all led's ASAP
   strip.setBrightness(BRIGHTNESS);
+
 }
 
 void loop() {
@@ -161,20 +169,13 @@ void loop() {
 void idleState() {
   unsigned long currentTime = millis();
   
-  /*
-  // Check if the trigger pin is triggered
-  if (digitalRead(TRIGGER_PIN) == LOW) {
-    currentState = MOVEMENT;  // Transition to movement state
-    initializeMovementState();
-  }
-
-  */
-  proximityRight = colorSensor1.readProximity(); 
-  // check if proximity trigger than there must be a beaker in the hand
-  if (proximityRight > PROXIMITY_THRESHOLD) {
-    Serial.println("beaker in hand, moving to movement state");
-    currentState = MOVEMENT; // transition to movement state
-  }
+  // proximityRight = colorSensor1.readProximity(); 
+  // Serial.println(proximityRight);
+  // // check if proximity trigger than there must be a beaker in the hand
+  // if (proximityRight > PROXIMITY_THRESHOLD) {
+  //   Serial.println("beaker in hand, moving to movement state");
+  //   currentState = MOVEMENT; // transition to movement state
+  // }
   
   // Move servo every MOVEMENT_INTERVAL milliseconds
   if (currentTime - previousMoveTime >= 15000) {
@@ -188,9 +189,11 @@ void idleState() {
 
 void slightMovement(){
   // Add slight movement
-  handLeftServo.write(45); //CHECK?????
+  handLeftServo.write(0); //CHECK?????
+  leftElbowServo.write(90);
   delay(3000); // Adjust delay based on your servo speed 
   handLeftServo.write(90);
+  leftElbowServo.write(0);
   delay(3000); // Adjust delay based on your servo speed 
 }
 void playSound() {
@@ -223,7 +226,7 @@ void movementState() {
 
 void engageElectromagnet() {
 
-  bool beakersDetected = false;
+  bool beakersDetected = true;
 
   // Code to engage the electromagnet
   Serial.println("electro magnets engaged");
@@ -268,14 +271,8 @@ void colorSensing(){
   }
 
   colorSensor1.getColorData(&r, &g, &b, &c);
-  // colorTemp = colorSensor1.calculateColorTemperature(r, g, b);
-  //colorTemp = colorSensor1.calculateColorTemperature_dn40(r, g, b, c);
-  //lux = colorSensor1.calculateLux(r, g, b);
 
   colorSensor2.getColorData(&r1, &g1, &b1, &c1);
-  // colorTemp = colorSensor2.calculateColorTemperature(r, g, b);
-  //colorTemp1 = colorSensor2.calculateColorTemperature_dn40(r1, g1, b1, c1);
-  //lux1 = colorSensor2.calculateLux(r1, g1, b1);
 
   setBeakerColors(r, g, b, c);
   setBeakerColors(r1, g1, b1, c1);
