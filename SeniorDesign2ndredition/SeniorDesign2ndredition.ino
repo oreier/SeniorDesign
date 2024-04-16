@@ -41,6 +41,9 @@
 // NeoPixel brightness, 0 (min) to 255 (max)
 #define BRIGHTNESS 200 // Set BRIGHTNESS to about 1/5 (max = 255)
 
+#define CLOSED 0
+#define OPEN 100
+
 int minServo = 500;
 int maxServo = 2500;
 
@@ -66,6 +69,14 @@ unsigned long proximityRight = 0;
 unsigned long proximityLeft = 0;
 
 
+enum Sides{
+  LEFT,
+  RIGHT,
+  BOTH,
+  UP,
+  DOWN
+}
+
 enum RobotState {
   IDLE,
   MOVEMENT
@@ -83,15 +94,27 @@ Servo handRightServo;
 Servo leftElbowServo;
 Servo rightElbowServo;
  
-Adafruit_APDS9960 colorSensor1;
-Adafruit_APDS9960 colorSensor2;
+Adafruit_APDS9960 colorSensorR;
+Adafruit_APDS9960 colorSensorL;
 
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRBW + NEO_KHZ800);
 
 bool colorDetected = false;
 
+int RHandClosed = 10;
+int RHandOpen = 70;
+int LHandClosed = 105;
+int LHandOpen = 30;
+
+int RBowBent = 10;
+int RBowStraight = 85;
+int LBowBent = 90;
+int LBowStraight = 15;
+
+
 
 void setup() {
+  
   pinMode(RIGHT_LINEAR_ACTUATOR_PIN_UP, OUTPUT);
   pinMode(LEFT_LINEAR_ACTUATOR_PIN_UP, OUTPUT);
   pinMode(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, OUTPUT);
@@ -113,6 +136,12 @@ void setup() {
   leftElbowServo.attach(ELBOW_LEFT_SERVO_PIN, minServo, maxServo);
   rightElbowServo.attach(ELBOW_RIGHT_SERVO_PIN, minServo, maxServo);
 
+  handRightServo.write(RHandOpen);
+  handLeftServo.write(LHandOpen);
+  leftElbowServo.write(LBowBent);
+  rightElbowServo.write(RBowBent);
+  
+
   // Set the electromagnet control pins as outputs
   pinMode(ELECTRO_MAG_RIGHT_PIN, OUTPUT);
   pinMode(ELECTRO_MAG_LEFT_PIN, OUTPUT);
@@ -120,32 +149,37 @@ void setup() {
   // Initially set both electromagnets to LOW
   digitalWrite(ELECTRO_MAG_RIGHT_PIN, LOW);
   digitalWrite(ELECTRO_MAG_LEFT_PIN, LOW);
-
+  
   //set pins. Optional for Wire, not for Wire1
+  //Wire is right, Wire1 is left
   Wire1.setSDA(2);
   Wire1.setSCL(3);
   Wire.setSDA(4);
   Wire.setSCL(5);
-
-  //initialize sensor 1 and check initialization simultaneously
-  if(!colorSensor1.begin(10, APDS9960_AGAIN_4X, APDS9960_ADDRESS, &Wire)){
-    Serial.println("Found sensor");
-  } else {
-    Serial.println("No colorSensor1 found ... check your connections");
-    while (1);
-  }
   
-  if(!colorSensor2.begin(10, APDS9960_AGAIN_4X, APDS9960_ADDRESS, &Wire1)){
-    Serial.println("Found sensor");
-  } else {
-    Serial.println("No colorSensor2 found ... check your connections");
-    while (1);
+  //initialize sensor 1 and check initialization simultaneously
+  if(!colorSensorR.begin()){
+    Serial.println("failed to initialize sensor device R! Please check your wiring.");
   }
+  else Serial.println("Sensor R Device initialized!");
+  
+  if(!colorSensorL.begin(10, APDS9960_AGAIN_4X, APDS9960_ADDRESS, &Wire1)){
 
+<<<<<<< Updated upstream
   colorSensor1.enableColor(true);
   colorSensor2.enableColor(true);
   colorSensor1.enableProximity(true);
   colorSensor2.enableProximity(true);
+=======
+    Serial.println("failed to initialize sensor device L! Please check your wiring.");
+  }
+  else Serial.println("Sensor L Device initialized!");
+  
+  colorSensorL.enableColor(true);
+  colorSensorR.enableColor(true);
+  colorSensorL.enableProximity(true);
+  colorSensorR.enableProximity(true);
+>>>>>>> Stashed changes
   
   //audio player
   player.begin();
@@ -155,6 +189,23 @@ void setup() {
   strip.show();            // Turn OFF all led's ASAP
   strip.setBrightness(BRIGHTNESS);
 
+<<<<<<< Updated upstream
+=======
+
+  //calibrate shoulders
+  //digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_UP, HIGH);
+  //digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_UP, HIGH);
+  //delay(10000);
+  //digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_UP, LOW);
+  //digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_UP, LOW);
+  
+  //digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, HIGH);
+  //digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, HIGH);
+  //delay(6000);  //set to find preferred starting position
+  //digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
+  //digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
+  
+>>>>>>> Stashed changes
 }
 
 void loop() {
@@ -163,12 +214,15 @@ void loop() {
   } else if (currentState == MOVEMENT) {
     movementState();
   }
+  //Serial.println("Running!");
+  //delay(100);
 }
 
 
 void idleState() {
   unsigned long currentTime = millis();
   
+<<<<<<< Updated upstream
   // proximityRight = colorSensor1.readProximity(); 
   // Serial.println(proximityRight);
   // // check if proximity trigger than there must be a beaker in the hand
@@ -176,9 +230,25 @@ void idleState() {
   //   Serial.println("beaker in hand, moving to movement state");
   //   currentState = MOVEMENT; // transition to movement state
   // }
+=======
+  /*
+  // Check if the trigger pin is triggered
+  if (digitalRead(TRIGGER_PIN) == LOW) {
+    currentState = MOVEMENT;  // Transition to movement state
+    initializeMovementState();
+  }
+
+  */
+  proximityRight = colorSensorR.readProximity(); 
+  // check if proximity trigger than there must be a beaker in the hand
+  if (proximityRight > PROXIMITY_THRESHOLD) {
+    Serial.println("beaker in hand, moving to movement state");
+    currentState = MOVEMENT; // transition to movement state
+  }
+>>>>>>> Stashed changes
   
   // Move servo every MOVEMENT_INTERVAL milliseconds
-  if (currentTime - previousMoveTime >= 15000) {
+  if (currentTime - previousMoveTime >= 5000) {
     previousMoveTime = currentTime;
     Serial.println("in idle state move!"); 
     playSound();
@@ -189,11 +259,17 @@ void idleState() {
 
 void slightMovement(){
   // Add slight movement
+<<<<<<< Updated upstream
   handLeftServo.write(0); //CHECK?????
   leftElbowServo.write(90);
   delay(3000); // Adjust delay based on your servo speed 
   handLeftServo.write(90);
   leftElbowServo.write(0);
+=======
+  handLeftServo.write(LHandClosed); //CHECK?????
+  delay(3000); // Adjust delay based on your servo speed 
+  handLeftServo.write(LHandOpen);
+>>>>>>> Stashed changes
   delay(3000); // Adjust delay based on your servo speed 
 }
 void playSound() {
@@ -208,7 +284,7 @@ void playSound() {
 void movementState() {
 
   Serial.println("entering the movement state");
-  engageElectromagnet();
+  //engageElectromagnet();
   closeHand();
   colorSensing();
   liftArmShoulder();
@@ -224,6 +300,10 @@ void movementState() {
 }
 
 
+
+
+
+
 void engageElectromagnet() {
 
   bool beakersDetected = true;
@@ -235,8 +315,8 @@ void engageElectromagnet() {
   delay(1000);
 
   while (!beakersDetected) {
-    proximityRight = colorSensor1.readProximity(); 
-    proximityLeft = colorSensor2.readProximity(); 
+    proximityRight = colorSensorR.readProximity(); 
+    proximityLeft = colorSensorL.readProximity(); 
     // check if proximity trigger than there must be a beaker in BOTH hands
     if (proximityRight > PROXIMITY_THRESHOLD && proximityLeft > PROXIMITY_THRESHOLD) {
       // Set flag to exit the while loop
@@ -252,7 +332,7 @@ void engageElectromagnet() {
 
 void closeHand() {
   Serial.println("close hand!!!!!");
-  handLeftServo.write(90);  // closed hand is 180     
+  handLeftServo.write(0);  // closed hand is 180     
   handRightServo.write(90);  // closed hand is 180
   delay(3000);                    
 }
@@ -266,13 +346,25 @@ void colorSensing(){
   uint16_t r1, g1, b1, c1, colorTemp1, lux1;
 
   //wait for color data to be ready
-  while(!colorSensor1.colorDataReady() || !colorSensor2.colorDataReady()){
+  while(!colorSensorR.colorDataReady() || !colorSensorL.colorDataReady()){
     delay(100);
   }
 
+<<<<<<< Updated upstream
   colorSensor1.getColorData(&r, &g, &b, &c);
 
   colorSensor2.getColorData(&r1, &g1, &b1, &c1);
+=======
+  colorSensorR.getColorData(&r, &g, &b, &c);
+  // colorTemp = colorSensorR.calculateColorTemperature(r, g, b);
+  //colorTemp = colorSensorR.calculateColorTemperature_dn40(r, g, b, c);
+  //lux = colorSensorR.calculateLux(r, g, b);
+
+  colorSensorL.getColorData(&r1, &g1, &b1, &c1);
+  // colorTemp = colorSensorL.calculateColorTemperature(r, g, b);
+  //colorTemp1 = colorSensorL.calculateColorTemperature_dn40(r1, g1, b1, c1);
+  //lux1 = colorSensorL.calculateLux(r1, g1, b1);
+>>>>>>> Stashed changes
 
   setBeakerColors(r, g, b, c);
   setBeakerColors(r1, g1, b1, c1);
