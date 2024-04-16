@@ -21,8 +21,8 @@
 #define HAND_RIGHT_SERVO_PIN 7   // Pin number for the hand right servo
 #define HAND_LEFT_SERVO_PIN 6    // Pin number for the hand left servo
 
-#define ELBOW_RIGHT_SERVO_PIN 9        // Pin number for the elbow right servo motor
-#define ELBOW_LEFT_SERVO_PIN 8        // Pin number for the elbow left servo motor
+#define ELBOW_RIGHT_SERVO_PIN 8        // Pin number for the elbow right servo motor
+#define ELBOW_LEFT_SERVO_PIN 9        // Pin number for the elbow left servo motor
 
 #define RIGHT_LINEAR_ACTUATOR_PIN_UP 10  // Pin number for the right shoulder linear actuator
 #define RIGHT_LINEAR_ACTUATOR_PIN_DOWN 11  // Pin number for the right shoulder linear actuator
@@ -68,6 +68,7 @@ unsigned long previousSoundTime = 0;
 unsigned long proximityRight = 0;
 unsigned long proximityLeft = 0;
 
+//DY.Device myPlayer = Sd;
 
 enum Sides{
   LEFT,
@@ -75,7 +76,7 @@ enum Sides{
   BOTH,
   UP,
   DOWN
-}
+};
 
 enum RobotState {
   IDLE,
@@ -101,10 +102,10 @@ Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRBW + NEO_KHZ800);
 
 bool colorDetected = false;
 
-int RHandClosed = 10;
-int RHandOpen = 70;
-int LHandClosed = 105;
-int LHandOpen = 30;
+int LHandClosed = 20;
+int LHandOpen = 70;
+int RHandClosed = 95;
+int RHandOpen = 30;
 
 int RBowBent = 10;
 int RBowStraight = 85;
@@ -127,19 +128,13 @@ void setup() {
   handLeftServo.attach(HAND_LEFT_SERVO_PIN, minServo, maxServo);
   handRightServo.attach(HAND_RIGHT_SERVO_PIN, minServo, maxServo);
 
-  handRightServo.write(0);
-  handLeftServo.write(90);
-
-  rightElbowServo.write(0);
-  leftElbowServo.write(0);
-
   leftElbowServo.attach(ELBOW_LEFT_SERVO_PIN, minServo, maxServo);
   rightElbowServo.attach(ELBOW_RIGHT_SERVO_PIN, minServo, maxServo);
 
   handRightServo.write(RHandOpen);
   handLeftServo.write(LHandOpen);
-  leftElbowServo.write(LBowBent);
-  rightElbowServo.write(RBowBent);
+  leftElbowServo.write(LBowStraight);
+  rightElbowServo.write(RBowStraight);
   
 
   // Set the electromagnet control pins as outputs
@@ -165,12 +160,6 @@ void setup() {
   
   if(!colorSensorL.begin(10, APDS9960_AGAIN_4X, APDS9960_ADDRESS, &Wire1)){
 
-<<<<<<< Updated upstream
-  colorSensor1.enableColor(true);
-  colorSensor2.enableColor(true);
-  colorSensor1.enableProximity(true);
-  colorSensor2.enableProximity(true);
-=======
     Serial.println("failed to initialize sensor device L! Please check your wiring.");
   }
   else Serial.println("Sensor L Device initialized!");
@@ -179,33 +168,33 @@ void setup() {
   colorSensorR.enableColor(true);
   colorSensorL.enableProximity(true);
   colorSensorR.enableProximity(true);
->>>>>>> Stashed changes
   
   //audio player
   player.begin();
+  //player.setPlayingDevice(1);
 
   //led strip
   strip.begin();           
   strip.show();            // Turn OFF all led's ASAP
   strip.setBrightness(BRIGHTNESS);
 
-<<<<<<< Updated upstream
-=======
 
   //calibrate shoulders
-  //digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_UP, HIGH);
-  //digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_UP, HIGH);
-  //delay(10000);
-  //digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_UP, LOW);
-  //digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_UP, LOW);
+  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_UP, HIGH);
+  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_UP, HIGH);
+  delay(10000);
+  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_UP, LOW);
+  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_UP, LOW);
+
   
-  //digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, HIGH);
-  //digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, HIGH);
-  //delay(6000);  //set to find preferred starting position
-  //digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
-  //digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
+//  player.playSpecifiedDevicePath(myPlayer,"/00001.MP3");
   
->>>>>>> Stashed changes
+  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, HIGH);
+  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, HIGH);
+  delay(10000);  //set to find preferred starting position
+  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
+  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
+  
 }
 
 void loop() {
@@ -222,15 +211,6 @@ void loop() {
 void idleState() {
   unsigned long currentTime = millis();
   
-<<<<<<< Updated upstream
-  // proximityRight = colorSensor1.readProximity(); 
-  // Serial.println(proximityRight);
-  // // check if proximity trigger than there must be a beaker in the hand
-  // if (proximityRight > PROXIMITY_THRESHOLD) {
-  //   Serial.println("beaker in hand, moving to movement state");
-  //   currentState = MOVEMENT; // transition to movement state
-  // }
-=======
   /*
   // Check if the trigger pin is triggered
   if (digitalRead(TRIGGER_PIN) == LOW) {
@@ -245,7 +225,6 @@ void idleState() {
     Serial.println("beaker in hand, moving to movement state");
     currentState = MOVEMENT; // transition to movement state
   }
->>>>>>> Stashed changes
   
   // Move servo every MOVEMENT_INTERVAL milliseconds
   if (currentTime - previousMoveTime >= 5000) {
@@ -259,23 +238,15 @@ void idleState() {
 
 void slightMovement(){
   // Add slight movement
-<<<<<<< Updated upstream
-  handLeftServo.write(0); //CHECK?????
-  leftElbowServo.write(90);
-  delay(3000); // Adjust delay based on your servo speed 
-  handLeftServo.write(90);
-  leftElbowServo.write(0);
-=======
   handLeftServo.write(LHandClosed); //CHECK?????
   delay(3000); // Adjust delay based on your servo speed 
   handLeftServo.write(LHandOpen);
->>>>>>> Stashed changes
   delay(3000); // Adjust delay based on your servo speed 
 }
 void playSound() {
   // Code to play the sound
-  //playSpecifiedDevicePath(..)
-  player.playSpecified(1);
+//  player.playSpecifiedDevicePath(myPlayer,"/00002.MP3");
+  //player.playSpecified(1);
 }
 
 // MOVEMENT STATE****************************************************************************************************
@@ -284,7 +255,7 @@ void playSound() {
 void movementState() {
 
   Serial.println("entering the movement state");
-  //engageElectromagnet();
+  engageElectromagnet();
   closeHand();
   colorSensing();
   liftArmShoulder();
@@ -295,18 +266,14 @@ void movementState() {
   returnArmShoulder();
   openHand();
   releaseElectromagnet();
-  
-  currentState = MOVEMENT;  // Transition back to idle state
+  delay(3000);
+  currentState = IDLE;  // Transition back to idle state
 }
-
-
-
-
 
 
 void engageElectromagnet() {
 
-  bool beakersDetected = true;
+  bool beakersDetected = false;
 
   // Code to engage the electromagnet
   Serial.println("electro magnets engaged");
@@ -332,8 +299,8 @@ void engageElectromagnet() {
 
 void closeHand() {
   Serial.println("close hand!!!!!");
-  handLeftServo.write(0);  // closed hand is 180     
-  handRightServo.write(90);  // closed hand is 180
+  handLeftServo.write(LHandClosed);  // closed hand is 180     
+  handRightServo.write(RHandClosed);  // closed hand is 180
   delay(3000);                    
 }
 
@@ -350,11 +317,6 @@ void colorSensing(){
     delay(100);
   }
 
-<<<<<<< Updated upstream
-  colorSensor1.getColorData(&r, &g, &b, &c);
-
-  colorSensor2.getColorData(&r1, &g1, &b1, &c1);
-=======
   colorSensorR.getColorData(&r, &g, &b, &c);
   // colorTemp = colorSensorR.calculateColorTemperature(r, g, b);
   //colorTemp = colorSensorR.calculateColorTemperature_dn40(r, g, b, c);
@@ -364,7 +326,6 @@ void colorSensing(){
   // colorTemp = colorSensorL.calculateColorTemperature(r, g, b);
   //colorTemp1 = colorSensorL.calculateColorTemperature_dn40(r1, g1, b1, c1);
   //lux1 = colorSensorL.calculateLux(r1, g1, b1);
->>>>>>> Stashed changes
 
   setBeakerColors(r, g, b, c);
   setBeakerColors(r1, g1, b1, c1);
@@ -420,8 +381,8 @@ void extendArmElbow() {
   //for(pos = 0; pos<=90; pos+=1);
 
   //Serial.println("extending elbow!!!!!");
-  leftElbowServo.write(180);  // left elbow
-  rightElbowServo.write(180); // right elbow
+  leftElbowServo.write(LBowBent);  // left elbow
+  rightElbowServo.write(RBowBent); // right elbow
   Serial.println("done extending elbow!!!!!");
   delay(1000); 
 }
@@ -432,17 +393,19 @@ void turnOnLED() {
   if (red == 1 && yellow == 1) {
     setColor(orange);
   }
-  else if(red == HIGH && blue == HIGH) {
+  else if(red == 1 && blue == 1) {
+    Serial.println("Purple!!!");
     setColor(purple);
   }
-  else if(yellow == HIGH && blue == HIGH) {
+  else if(yellow == 1 && blue == 1) {
     setColor(green);
   }
   else { // invalid combination
-    setColorOff();
+    //setColorOff();
+    setColor(orange);
   }
 
-  delay(3000);
+  delay(10000);
 }
 
 void setColor(const int color[]) {
@@ -451,21 +414,23 @@ void setColor(const int color[]) {
   uint8_t g = color[1];  // Extract green value from array
   uint8_t b = color[2];  // Extract blue value from array
   
-  for(int i=0; i<LED_COUNT; i++) { // For each pixel...
+  //for(int i=0; i<LED_COUNT; i++) { // For each pixel...
 
     // pixels.Color() takes RGB values, from 0,0,0 up to 255,255,255
-    strip.setPixelColor(i, strip.Color(r, g, b));
+    //strip.setPixelColor(i, strip.Color(r, g, b));
 
-    strip.show();   // Send the updated pixel colors to the hardware.
+    //strip.show();   // Send the updated pixel colors to the hardware.
+  //}
 
-    delay(5); // Pause before next pass through loop
-  }
+  strip.fill(strip.Color(r, g, b), 0, LED_COUNT);
+  strip.show();
   
 }
 
 void setColorOff() {
-  strip.clear();
-  rainbow(10);
+  strip.fill(strip.Color(0, 0, 0), 0, LED_COUNT);
+  strip.show();
+  //rainbow(10);
   
 }
 
@@ -473,8 +438,8 @@ void returnArmElbow() {
 
 // *********************** WHAT IS THIS ANGLE??? ELBOW
   Serial.println("return elbow!!!!!");
-  leftElbowServo.write(90);  // left elbow
-  rightElbowServo.write(90); // right elbow
+  leftElbowServo.write(LBowStraight);  // left elbow
+  rightElbowServo.write(RBowStraight); // right elbow
   delay(3000); 
 
 }
@@ -491,8 +456,8 @@ void returnArmShoulder() {
 
 void openHand() {
   Serial.println("open hand!!!!!");
-  handLeftServo.write(0);  // open hand is     
-  handRightServo.write(0);  // open hand is ?????WHAT ANGLE
+  handLeftServo.write(LHandOpen);  // open hand is     
+  handRightServo.write(RHandOpen);  // open hand is ?????WHAT ANGLE
   delay(3000);  
 
 }
