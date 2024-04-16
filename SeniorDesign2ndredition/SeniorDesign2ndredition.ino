@@ -47,7 +47,6 @@
 int minServo = 500;
 int maxServo = 2500;
 
-
 int red = 0;
 int blue = 0;
 int yellow = 0;
@@ -68,7 +67,8 @@ unsigned long previousSoundTime = 0;
 unsigned long proximityRight = 0;
 unsigned long proximityLeft = 0;
 
-//DY.Device myPlayer = Sd;
+char soundYawn[] = "/00001*MP3";
+char soundBloop[] = "/00002*MP3";
 
 enum Sides{
   LEFT,
@@ -182,16 +182,16 @@ void setup() {
   //calibrate shoulders
   digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_UP, HIGH);
   digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_UP, HIGH);
-  delay(10000);
+  delay(12000);
   digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_UP, LOW);
   digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_UP, LOW);
 
   
-//  player.playSpecifiedDevicePath(myPlayer,"/00001.MP3");
+  player.playSpecifiedDevicePath(DY::Device::Sd, soundYawn);
   
   digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, HIGH);
   digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, HIGH);
-  delay(10000);  //set to find preferred starting position
+  delay(6000);  //set to find preferred starting position
   digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
   digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
   
@@ -245,7 +245,7 @@ void slightMovement(){
 }
 void playSound() {
   // Code to play the sound
-//  player.playSpecifiedDevicePath(myPlayer,"/00002.MP3");
+  player.playSpecifiedDevicePath(DY::Device::Sd, soundBloop);
   //player.playSpecified(1);
 }
 
