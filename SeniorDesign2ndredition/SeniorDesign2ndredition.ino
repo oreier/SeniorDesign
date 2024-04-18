@@ -218,16 +218,29 @@ void idleState() {
   proximityLeft = colorSensorL.readProximity(); 
   // check if proximity trigger than there must be a beaker in the hand
   if (proximityRight > PROXIMITY_THRESHOLD) {
-    Serial.println("beaker in hand, moving to movement state");
+    Serial.println("beaker in left hand");
     digitalWrite(ELECTRO_MAG_RIGHT_PIN, HIGH);
-    handRightServo.write(RHandClosed);  // closed hand is 180
-    currentState = MOVEMENT; // transition to movement state
+    handRightServo.write(RHandClosed); 
+    //currentState = MOVEMENT; // transition to movement state
+  } else{
+    Serial.println("beaker in right hand removed");
+    digitalWrite(ELECTRO_MAG_RIGHT_PIN, LOW);
+    handRightServo.write(RHandOpen); 
   }
 
-  else if (proximityLeft > PROXIMITY_THRESHOLD) {
+  if (proximityLeft > PROXIMITY_THRESHOLD) {
     Serial.println("beaker in hand, moving to movement state");
     digitalWrite(ELECTRO_MAG_LEFT_PIN, HIGH);
     handLeftServo.write(LHandClosed);
+    //currentState = MOVEMENT; // transition to movement state
+  } else{
+    Serial.println("beaker in left hand removed");
+    digitalWrite(ELECTRO_MAG_LEFT_PIN, LOW);
+    handLeftServo.write(LHandOpen); 
+  }
+
+  if(proximityRight > PROXIMITY_THRESHOLD && proximityLeft > PROXIMITY_THRESHOLD){
+    Serial.println("Beakers in both hands. Transitioning to movement state");
     currentState = MOVEMENT; // transition to movement state
   }
   
@@ -237,7 +250,7 @@ void idleState() {
     Serial.println("in idle state move!"); 
     player.playSpecifiedDevicePath(DY::Device::Sd, soundBloop);
     //playRandomSound();
-    slightMovement(); // Call function to move the servo
+    //slightMovement(); // Call function to move the servo
   }
 
 }
@@ -270,7 +283,8 @@ void slightMovement(){
 void movementState() {
 
   Serial.println("entering the movement state");
-  engageElectromagnet();
+  //engageElectromagnet();
+  delay(1000);
   closeHand();
   colorSensing();
   liftArmShoulder();
@@ -394,6 +408,10 @@ void extendArmElbow() {
   int currentPosRight = rightElbowServo.read(); // Read current position of right elbow servo
 
   // Extend left elbow servo gradually to LBowBent position
+  servoSweep(leftElbowServo, LBowStraight, LBowBent, delayTime);
+  servoSweep(rightElbowServo, RBowStraight, RBowBent, delayTime);
+  
+  /*
   if (currentPosLeft < LBowBent) {
     for (int pos = currentPosLeft; pos <= LBowBent; pos -= increment) {
       leftElbowServo.write(pos);
@@ -405,7 +423,28 @@ void extendArmElbow() {
       rightElbowServo.write(pos);
       delay(delayTime);
     }
+  }*/
+}
+
+void servoSweep(Servo &motor, int initialPos, int endPos, int delayTime){
+  int pos;
+  
+  if(initialPos < endPos){
+    for (pos = initialPos; pos <= endPos; pos += 1) { // goes from 0 degrees to 180 degrees
+      // in steps of 1 degree
+      motor.write(pos);              // tell servo to go to position in variable 'pos'
+      delay(delayTime);                       // waits 15ms for the servo to reach the position
+    }
+  } else if(initialPos > endPos){
+    for (pos = initialPos; pos >= endPos; pos -= 1) { // goes from 180 degrees to 0 degrees
+      motor.write(pos);              // tell servo to go to position in variable 'pos'
+      delay(delayTime);                       // waits 15ms for the servo to reach the position
+    }
+  } else{
+    Serial.println("error, initial and end positions cannot be equal");
+    return;
   }
+
 }
 
 
@@ -453,8 +492,9 @@ void returnArmElbow() {
 
 // *********************** WHAT IS THIS ANGLE??? ELBOW
   Serial.println("return elbow!!!!!");
-  leftElbowServo.write(LBowStraight);  // left elbow
-  rightElbowServo.write(RBowStraight); // right elbow
+  int delayTime = 20; // Delay time in milliseconds between each increment
+  servoSweep(leftElbowServo, LBowBent, LBowStraight, delayTime);
+  servoSweep(rightElbowServo, RBowBent, RBowStraight, delayTime);
   delay(3000); 
 
 }
