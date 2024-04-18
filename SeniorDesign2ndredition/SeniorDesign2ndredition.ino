@@ -215,6 +215,7 @@ void idleState() {
   unsigned long currentTime = millis();
   
   proximityRight = colorSensorR.readProximity(); 
+  proximityLeft = colorSensorL.readProximity(); 
   // check if proximity trigger than there must be a beaker in the hand
   if (proximityRight > PROXIMITY_THRESHOLD) {
     Serial.println("beaker in hand, moving to movement state");
