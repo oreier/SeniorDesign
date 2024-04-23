@@ -64,18 +64,18 @@ unsigned long proximityRight = 0;
 unsigned long proximityLeft = 0;
 
 char soundYawn[] = "/00001*MP3";
-char soundBloop[] = "/00002*MP3";
-char soundBloop2[] = "/00003*MP3";
+char soundWhatsUp[] = "/00002*MP3";
+char soundComeSayHi[] = "/00003*MP3";
+char soundWannaSeeSomethingCool[] = "/00007*MP3";
+char soundHeyOverHere[] = "/00008*MP3";
+char redBeaker[] = "/00009*MP3";
+char yellowBeaker[] = "/00010*MP3";
+char blueBeaker[] = "/00011*MP3";
 char greenBeaker[] = "/00004*MP3";
 char purpleBeaker[] = "/00005*MP3";
 char orangeBeaker[] = "/00006*MP3";
-
-
-// // Array of sound file names
-// char* soundPaths[] = {
-//   "/00002*MP3",
-//   "/00003*MP3"
-// };
+char soundThatRocked[] = "/00012*MP3";
+char soundHappy[] = "/00013*MP3";
 
 int numberOfSounds = 2;
 
@@ -120,6 +120,8 @@ int RBowBent = 10;
 int RBowStraight = 85;
 int LBowBent = 90;
 int LBowStraight = 15;
+
+int soundCounter = 1;
 
 void setup() {
   
@@ -245,38 +247,51 @@ void idleState() {
   }
   
   // Move servo every MOVEMENT_INTERVAL milliseconds
-  if (currentTime - previousMoveTime >= 5000) {
+  if (currentTime - previousMoveTime >= 15000) {
     previousMoveTime = currentTime;
     Serial.println("in idle state move!"); 
-    player.playSpecifiedDevicePath(DY::Device::Sd, soundBloop);
-    //playRandomSound();
-    //slightMovement(); // Call function to move the servo
+    //player.playSpecifiedDevicePath(DY::Device::Sd, soundBloop);
+    playRandomSound();
+    if (!(proximityRight > PROXIMITY_THRESHOLD)) {
+      slightMovement(); 
+    }
   }
 
 }
 
 void slightMovement(){
   // Add slight movement
-  handLeftServo.write(LHandClosed); //CHECK?????
+  servoSweep(rightElbowServo, RBowStraight, RBowBent, 10);
+  handLeftServo.write(0);
   delay(3000); // Adjust delay based on your servo speed 
   handLeftServo.write(LHandOpen);
+  servoSweep(rightElbowServo, RBowBent, RBowStraight, 10);
   delay(3000); // Adjust delay based on your servo speed 
 }
 
-// void playRandomSound() {
-//   // Generate a random index to select a sound
-//   int randomIndex = random(0, numberOfSounds);
+void playRandomSound() {
 
-//   // Get the selected sound path
-//   char selectedSound = soundPaths[randomIndex];
+  if (soundCounter == 1) {
+    player.playSpecifiedDevicePath(DY::Device::Sd, soundWhatsUp);
+    soundCounter++;
+  }
 
-//   // Print the selected sound for debugging
-//   Serial.print("Playing sound: ");
-//   Serial.println(selectedSound);
+  else if (soundCounter == 2) {
+    player.playSpecifiedDevicePath(DY::Device::Sd, soundComeSayHi);
+    soundCounter++;
+  }
 
-//   // Play the selected sound
-//   player.playSpecifiedDevicePath(DY::Device::Sd, selectedSound);
-// }
+  else if (soundCounter == 3) {
+    player.playSpecifiedDevicePath(DY::Device::Sd, soundWannaSeeSomethingCool);
+    soundCounter++;
+  }
+
+  else if (soundCounter == 4) {
+    player.playSpecifiedDevicePath(DY::Device::Sd, soundHeyOverHere);
+    soundCounter = 1;
+  }
+
+}
 // MOVEMENT STATE****************************************************************************************************
 
 
@@ -295,6 +310,7 @@ void movementState() {
   returnArmShoulder();
   openHand();
   releaseElectromagnet();
+  dance();
   delay(3000);
   currentState = IDLE;  // Transition back to idle state
 }
@@ -396,10 +412,6 @@ void liftArmShoulder() {
 }
 
 void extendArmElbow() {
-  // leftElbowServo.write(LBowBent);  // left elbow
-  // rightElbowServo.write(RBowBent); // right elbow
-  // Serial.println("done extending elbow!!!!!");
-  // delay(1000); 
 
   int increment = 1;  // Increment value for gradual movement
   int delayTime = 20; // Delay time in milliseconds between each increment
@@ -411,19 +423,6 @@ void extendArmElbow() {
   servoSweep(leftElbowServo, LBowStraight, LBowBent, delayTime);
   servoSweep(rightElbowServo, RBowStraight, RBowBent, delayTime);
   
-  /*
-  if (currentPosLeft < LBowBent) {
-    for (int pos = currentPosLeft; pos <= LBowBent; pos -= increment) {
-      leftElbowServo.write(pos);
-      delay(delayTime);
-    }
-  }
-  if (currentPosRight < RBowBent) {
-    for (int pos = currentPosRight; pos <= RBowBent; pos += increment) {
-      rightElbowServo.write(pos);
-      delay(delayTime);
-    }
-  }*/
 }
 
 void servoSweep(Servo &motor, int initialPos, int endPos, int delayTime){
@@ -465,7 +464,6 @@ void turnOnLED() {
   }
   else { // invalid combination
     setColorOff();
-    //setColor(orange);
   }
 
   delay(8000);
@@ -503,7 +501,7 @@ void returnArmShoulder() {
   Serial.println("Arm shoulder returns");
   digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, HIGH);
   digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, HIGH);
-  delay(5000); // adjust the delay time as needed to reach position
+  delay(7000); // adjust the delay time as needed to reach position
   digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
   digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
 }
@@ -518,8 +516,51 @@ void openHand() {
 }
 
 void releaseElectromagnet() {
+  player.playSpecifiedDevicePath(DY::Device::Sd, soundThatRocked);
   digitalWrite(ELECTRO_MAG_RIGHT_PIN, LOW);
   digitalWrite(ELECTRO_MAG_LEFT_PIN, LOW);
+}
+
+void dance(){
+
+  player.playSpecifiedDevicePath(DY::Device::Sd, soundHappy);
+
+  //lift shoulders
+  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_UP, HIGH);
+  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_UP, HIGH);
+  delay(5000); // adjust the delay time as needed to reach position
+  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_UP, LOW);
+  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_UP, LOW);
+
+  //dance!!!
+  armDance(); 
+
+  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, HIGH);
+  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, HIGH);
+  delay(5000); // adjust the delay time as needed to reach position
+  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
+  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
+
+}
+
+
+void armDance() {
+
+  servoSweep(rightElbowServo, RBowStraight, RBowBent, 10);
+
+  servoSweep(rightElbowServo, RBowBent, RBowStraight, 10); 
+  servoSweep(leftElbowServo, LBowStraight, LBowBent, 10);
+
+  servoSweep(leftElbowServo, LBowBent, LBowStraight, 10);
+  servoSweep(rightElbowServo, RBowStraight, RBowBent, 10);
+
+  servoSweep(rightElbowServo, RBowBent, RBowStraight, 10); 
+  servoSweep(leftElbowServo, LBowStraight, LBowBent, 10);
+
+  servoSweep(leftElbowServo, LBowBent, LBowStraight, 10);
+  servoSweep(rightElbowServo, RBowStraight, RBowBent, 10); 
+
+  servoSweep(rightElbowServo, RBowBent, RBowStraight, 10);
 }
 
 void colorWipe(uint32_t color, int wait) {
