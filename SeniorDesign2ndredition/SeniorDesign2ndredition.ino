@@ -94,6 +94,9 @@ enum RobotState {
 
 
 // VARIABLES
+int currentLeftShoulder;
+int currentRightShoulder;
+
 DY::Player player(&Serial1);
 
 RobotState currentState = IDLE;
@@ -185,20 +188,12 @@ void setup() {
 
 
   //calibrate shoulders
-  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_UP, HIGH);
-  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_UP, HIGH);
-  delay(12000);
-  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_UP, LOW);
-  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_UP, LOW);
+  resetShoulder();
 
   
   player.playSpecifiedDevicePath(DY::Device::Sd, soundYawn);
   
-  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, HIGH);
-  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, HIGH);
-  delay(6000);  //set to find preferred starting position
-  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
-  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
+  liftShoulder(BOTH, 65);
   
 }
 
@@ -220,23 +215,21 @@ void idleState() {
   proximityLeft = colorSensorL.readProximity(); 
   // check if proximity trigger than there must be a beaker in the hand
   if (proximityRight > PROXIMITY_THRESHOLD) {
-    Serial.println("beaker in left hand");
+    Serial.println("beaker in right hand");
     digitalWrite(ELECTRO_MAG_RIGHT_PIN, HIGH);
     handRightServo.write(RHandClosed); 
     //currentState = MOVEMENT; // transition to movement state
   } else{
-    Serial.println("beaker in right hand removed");
     digitalWrite(ELECTRO_MAG_RIGHT_PIN, LOW);
     handRightServo.write(RHandOpen); 
   }
 
   if (proximityLeft > PROXIMITY_THRESHOLD) {
-    Serial.println("beaker in hand, moving to movement state");
+    Serial.println("beaker in left hand");
     digitalWrite(ELECTRO_MAG_LEFT_PIN, HIGH);
     handLeftServo.write(LHandClosed);
     //currentState = MOVEMENT; // transition to movement state
   } else{
-    Serial.println("beaker in left hand removed");
     digitalWrite(ELECTRO_MAG_LEFT_PIN, LOW);
     handLeftServo.write(LHandOpen); 
   }
@@ -302,14 +295,22 @@ void movementState() {
   delay(1000);
   closeHand();
   colorSensing();
-  liftArmShoulder();
-  extendArmElbow();
+  liftShoulder(BOTH, 50);
+  bendArmElbow();
   turnOnLED();
   setColorOff();
-  returnArmElbow();
-  returnArmShoulder();
-  openHand();
+  
+  servoSweep(leftElbowServo, LBowBent, (LBowStraight+LBowBent)/2, 20);
+  servoSweep(rightElbowServo, RBowBent, (RBowStraight+RBowBent)/2, 20);
+  
+  liftShoulder(BOTH, 75);
   releaseElectromagnet();
+  openHand();
+  liftShoulder(BOTH, 65);
+  
+  servoSweep(leftElbowServo, (LBowStraight+LBowBent)/2, LBowBent, 20);
+  servoSweep(rightElbowServo, (RBowStraight+RBowBent)/2, RBowBent, 20);
+  
   dance();
   delay(3000);
   currentState = IDLE;  // Transition back to idle state
@@ -401,17 +402,63 @@ void setBeakerColors(uint16_t r, uint16_t g, uint16_t b, uint16_t c) {
 }
 
 
-void liftArmShoulder() {
-  Serial.println("Arm shoulder opens");
+//resetShoulder();
+void resetShoulder(){
+  Serial.println("reset");
   digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_UP, HIGH);
   digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_UP, HIGH);
-  delay(5000); // adjust the delay time as needed to reach position
+  delay(12000);
   digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_UP, LOW);
   digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_UP, LOW);
-
+  currentLeftShoulder = 0;
+  currentRightShoulder = 0;
 }
 
-void extendArmElbow() {
+//liftShoulder(LEFT/RIGHT/BOTH, 0-100, where 0 is the highest position)
+void liftShoulder(Sides side, int mm){
+  int leftSpeedUp = 900;
+  int rightSpeedUp = 833;
+  int leftSpeedDown = 800;
+  int rightSpeedDown = 850;
+  
+  int delayLeft = ((mm < currentLeftShoulder)) ? ((abs(currentLeftShoulder-mm)*leftSpeedUp)/10) : ((abs(currentLeftShoulder-mm)*leftSpeedDown)/10);
+  int delayRight = ((mm < currentRightShoulder)) ? ((abs(currentRightShoulder-mm)*rightSpeedUp)/10) : ((abs(currentRightShoulder-mm)*rightSpeedDown)/10);
+  
+  Serial.println(delayLeft);
+  Serial.println(delayRight);
+  
+  bool leftUp = ((mm < currentLeftShoulder)) ? true : false;
+  bool rightUp = (mm < currentRightShoulder) ? true : false;
+
+  if(side == RIGHT || side == BOTH){
+    digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_UP, rightUp);
+    digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, !rightUp);
+    currentRightShoulder = mm;
+  }
+  if(side == LEFT || side == BOTH){
+    digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_UP, leftUp);
+    digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, !leftUp);
+    currentLeftShoulder = mm;
+  }
+  if(delayLeft < delayRight){
+    delay(delayLeft);
+    digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_UP, LOW);
+    digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
+    delay(delayRight-delayLeft);
+    digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_UP, LOW);
+    digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
+  }else{
+    delay(delayRight);
+    digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_UP, LOW);
+    digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
+    delay(delayLeft-delayRight);
+    digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_UP, LOW);
+    digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
+  }
+  
+}
+
+void bendArmElbow() {
 
   int increment = 1;  // Increment value for gradual movement
   int delayTime = 20; // Delay time in milliseconds between each increment
@@ -486,7 +533,7 @@ void setColorOff() {
   blue = 0;
 }
 
-void returnArmElbow() {
+void straightenArmElbow() {
 
 // *********************** WHAT IS THIS ANGLE??? ELBOW
   Serial.println("return elbow!!!!!");
@@ -495,15 +542,6 @@ void returnArmElbow() {
   servoSweep(rightElbowServo, RBowBent, RBowStraight, delayTime);
   delay(3000); 
 
-}
-
-void returnArmShoulder() {
-  Serial.println("Arm shoulder returns");
-  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, HIGH);
-  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, HIGH);
-  delay(7000); // adjust the delay time as needed to reach position
-  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
-  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
 }
 
 
@@ -526,20 +564,12 @@ void dance(){
   player.playSpecifiedDevicePath(DY::Device::Sd, soundHappy);
 
   //lift shoulders
-  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_UP, HIGH);
-  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_UP, HIGH);
-  delay(5000); // adjust the delay time as needed to reach position
-  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_UP, LOW);
-  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_UP, LOW);
+  liftShoulder(BOTH, 50);
 
   //dance!!!
   armDance(); 
 
-  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, HIGH);
-  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, HIGH);
-  delay(5000); // adjust the delay time as needed to reach position
-  digitalWrite(RIGHT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
-  digitalWrite(LEFT_LINEAR_ACTUATOR_PIN_DOWN, LOW);
+  liftShoulder(BOTH, 65);
 
 }
 
