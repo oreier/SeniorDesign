@@ -295,7 +295,7 @@ void movementState() {
   delay(1000);
   closeHand();
   colorSensing();
-  liftShoulder(BOTH, 50);
+  liftShoulder(BOTH, 44);
   bendArmElbow();
   turnOnLED();
   setColorOff();
@@ -303,13 +303,13 @@ void movementState() {
   servoSweep(leftElbowServo, LBowBent, (LBowStraight+LBowBent)/2, 20);
   servoSweep(rightElbowServo, RBowBent, (RBowStraight+RBowBent)/2, 20);
   
-  liftShoulder(BOTH, 75);
+  liftShoulder(BOTH, 100);
   releaseElectromagnet();
   openHand();
   liftShoulder(BOTH, 65);
   
-  servoSweep(leftElbowServo, (LBowStraight+LBowBent)/2, LBowBent, 20);
-  servoSweep(rightElbowServo, (RBowStraight+RBowBent)/2, RBowBent, 20);
+  servoSweep(leftElbowServo, (LBowStraight+LBowBent)/2, LBowStraight, 20);
+  servoSweep(rightElbowServo, (RBowStraight+RBowBent)/2, RBowStraight, 20);
   
   dance();
   delay(3000);
@@ -564,7 +564,7 @@ void dance(){
   player.playSpecifiedDevicePath(DY::Device::Sd, soundHappy);
 
   //lift shoulders
-  liftShoulder(BOTH, 50);
+  liftShoulder(BOTH, 45);
 
   //dance!!!
   armDance(); 
